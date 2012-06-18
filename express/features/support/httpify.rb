@@ -12,7 +12,7 @@ module RHCHelper
       uri = URI.parse(url)
       http = Net::HTTP.new(uri.host)
       http.open_timeout = timeout
-      http.connect_timeout = timeout
+      http.read_timeout = timeout
       if (uri.scheme == "https")
         http.use_ssl = true
         http.verify_mode = OpenSSL::SSL::VERIFY_NONE
