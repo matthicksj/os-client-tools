@@ -1,6 +1,5 @@
 require 'benchmark'
 require 'fileutils'
-require 'pp'
 
 module RHCHelper
   module Commandify

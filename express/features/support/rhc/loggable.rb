@@ -1,3 +1,5 @@
+require 'logger'
+
 module RHCHelper
   module Loggable
     PASSWORD_REGEX = / -p [^\s]* /
@@ -11,7 +13,7 @@ module RHCHelper
     end
 
     def self.logger
-      @logger ||= Logger.STDOUT
+      @logger ||= Logger.new($stdout)
     end
 
     def self.logger=(logger)
@@ -27,7 +29,7 @@ module RHCHelper
     end
 
     def self.perf_logger
-      @perf_logger ||= Logger.STDOUT
+      @perf_logger ||= Logger.new($stdout)
     end
 
     def self.perf_logger=(logger)

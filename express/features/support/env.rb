@@ -1,10 +1,7 @@
+$: << File.expand_path(File.dirname(__FILE__))
+
 require 'tmpdir'
-require File.expand_path(File.dirname(__FILE__) + '/loggable')
-require File.expand_path(File.dirname(__FILE__) + '/httpify')
-require File.expand_path(File.dirname(__FILE__) + '/runnable')
-require File.expand_path(File.dirname(__FILE__) + '/commandify')
-require File.expand_path(File.dirname(__FILE__) + '/persistable')
-require File.expand_path(File.dirname(__FILE__) + '/app_helper')
+require 'rhc/app_helper'
 
 #
 # Define global variables

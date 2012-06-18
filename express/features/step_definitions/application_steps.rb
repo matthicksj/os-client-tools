@@ -1,7 +1,4 @@
-require 'rubygems'
-require 'uri'
 require 'fileutils'
-require 'pp'
 
 include RHCHelper
 
@@ -59,11 +56,11 @@ When /^the submodule is added$/ do
 end
 
 When /^the embedded (.*) cartridge is added$/ do |type|
-  rhc_embed_add(@app, type)
+  @app.rhc_app_cartridge_add(type)
 end
 
 When /^the embedded (.*) cartridge is removed$/ do |type|
-  rhc_embed_remove(@app, type)
+  @app.rhc_app_cartridge_remove(type)
 end
 
 When /^the application is changed$/ do
@@ -96,47 +93,57 @@ When /^the application uses mysql$/ do
 end
 
 When /^the application is stopped$/ do
-  rhc_ctl_stop(@app)
+  @app.rhc_app_stop
 end
 
 When /^the application is started$/ do
-  rhc_ctl_start(@app)
+  @app.rhc_app_start
 end
 
 When /^the application is aliased$/ do
-  rhc_add_alias(@app)
+  @app.alias = "www.example.com"
+  @app.rhc_app_add_alias
 end
 
 When /^the application is unaliased$/ do
-  rhc_remove_alias(@app)
+  @app.alias = "www.example.com"
+  @app.rhc_app_remove_alias
 end
 
 When /^the application is restarted$/ do
-  rhc_ctl_restart(@app)
+  @app.rhc_app_restart
 end
 
 When /^the application is destroyed$/ do
-  rhc_ctl_destroy(@app)
+  @app.rhc_app_destroy
 end
 
 When /^the application namespace is updated$/ do
-  rhc_update_namespace(@app)
+  # TODO - update the namespace
+  @app.rhc_domain_alter
 end
 
 When /^I snapshot the application$/ do
-  rhc_snapshot(@app)
+  @snapshot = File.join($temp, "snapshot.tar.gz")
+  @app.snapshot = @snapshot
+  @app.rhc_app_snapshot_save
 end
 
 When /^I tidy the application$/ do
-  rhc_tidy(@app)
+  @app.rhc_app_tidy
 end
 
 When /^I restore the application$/ do
-  rhc_restore(@app)
+  @app.rhc_app_snapshot_restore
+end
+
+Then /^the snapshot should be found$/ do
+  File.exist?(@snapshot).should be_true
+  (File.size(@snapshot) > 0).should be_true
 end
 
 Then /^the application should respond to the alias$/ do
-  @app.is_accessible?(false, 120, "#{@app.name}-#{@app.namespace}.#{$alias_domain}").should be_true
+  @app.is_accessible?(false, 120, "#{@app.alias}").should be_true
 end
 
 Then /^the applications should be accessible?$/ do

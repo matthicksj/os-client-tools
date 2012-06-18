@@ -1,5 +1,6 @@
 require 'uri'
 require 'net/https'
+require 'rhc/loggable'
 
 module RHCHelper
   module Httpify
@@ -8,9 +9,8 @@ module RHCHelper
     # attributes that contain statistics based on calls to connect
     attr_accessor :response_code, :response_time
 
-    def http_instance(url, timeout=30)
-      uri = URI.parse(url)
-      http = Net::HTTP.new(uri.host)
+    def http_instance(uri, timeout=30)
+      http = Net::HTTP.new(uri.host, uri.port)
       http.open_timeout = timeout
       http.read_timeout = timeout
       if (uri.scheme == "https")
@@ -21,14 +21,16 @@ module RHCHelper
     end
 
     def http_get(url, timeout=30)
-      http = http_instance(url, timeout)
+      uri = URI.parse(url)
+      http = http_instance(uri, timeout)
       http.start
       request = Net::HTTP::Get.new(uri.request_uri)
       http.request(request)
     end
     
     def http_head(url, host=nil, follow_redirects=true)
-      http = http_instance(url)
+      uri = URI.parse(url)
+      http = http_instance(uri)
       http.start
       request = Net::HTTP::Head.new(uri.request_uri)
       request["Host"] = host if host

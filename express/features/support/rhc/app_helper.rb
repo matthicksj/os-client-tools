@@ -1,12 +1,18 @@
 require 'dnsruby'
+require 'rhc/loggable'
+require 'rhc/commandify'
+require 'rhc/runnable'
+require 'rhc/persistable'
+require 'rhc/httpify'
 
 module RHCHelper
-  class App
+  class App 
+    extend Persistable
     include Dnsruby
     include Loggable
     include Commandify
     include Runnable
-    include Persistable
+    include Persistify
     include Httpify
 
     # attributes to represent the general information of the application
@@ -16,7 +22,7 @@ module RHCHelper
     attr_accessor :mysql_hostname, :mysql_user, :mysql_password, :mysql_database
 
     # Create the data structure for a test application
-    def initialize(namespace, login, type, name, password)
+    def initialize(namespace, login, type, name, password=nil)
       @name, @namespace, @login, @type, @password = name, namespace, login, type, password
       @hostname = "#{name}-#{namespace}.#{$domain}"
       @repo = "#{$temp}/#{namespace}_#{name}_repo"
