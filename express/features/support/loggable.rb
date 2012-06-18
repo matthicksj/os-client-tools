@@ -1,6 +1,6 @@
 module RHCHelper
   module Loggable
-    PASSWORD_REGEX = /(rhc .*) -p [^\s]* /
+    PASSWORD_REGEX = /(.* rhc .*) -p [^\s]* /
 
     def logger
       Loggable.logger
