@@ -115,15 +115,10 @@ module RHCHelper
     persist
   end
 
-  def app_destroy_callback
+  def app_destroy_callback(exitcode, stdout, stderr, arg)
     FileUtils.rm_rf @repo
     FileUtils.rm_rf @file
     @repo, @file = nil
-  end
-
-  def domain_alter_callback
-    FileUtils.rm_rf @repo
-    # TODO - re-setup repo
   end
 
   def cartridge_add_callback(exitcode, stdout, stderr, cartridge)
