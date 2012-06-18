@@ -2,11 +2,12 @@ require 'active_support'
 require 'dnsruby'
 require 'pp'
 
-module AppHelper::RHC
+module RHCHelper
   class App
     include ActiveSupport::JSON
     include Dnsruby
-    include CallbackHelper
+    include RHCHelper::Commandify
+    include RHCHelper::Runnable
 
     # The regex to parse the ssh output from the create app results
     SSH_OUTPUT_PATTERN = %r|ssh://([^@]+)@([^/]+)|
@@ -26,15 +27,15 @@ module AppHelper::RHC
     attr_accessor :mysql_hostname, :mysql_user, :mysql_password, :mysql_database
 
     def logger
-      @logger ||= Logger.new(STDOUT)
+      @logger = $logger ? $logger : Logger.new(STDOUT)
     end
 
     def perf_logger
-      @perf_logger ||= Logger.new(STDOUT)
+      @perf_logger = $perf_logger ? $perf_logger : Logger.new(STDOUT)
     end
 
     # Create the data structure for a test application
-    def initialize(namespace, login, type, name, password="xyz123")
+    def initialize(namespace, login, type, name, password)
       @name, @namespace, @login, @type, @password = name, namespace, login, type, password
       @hostname = "#{name}-#{namespace}.#{$domain}"
       @repo = "#{$temp}/#{namespace}_#{name}_repo"
@@ -46,10 +47,11 @@ module AppHelper::RHC
       loop do
         # Generate a random username
         chars = ("1".."9").to_a
-        namespace = "ci" + Array.new(8, '').collect{chars[rand(chars.size)]}.join
-        login = "cucumber-test_#{namespace}@example.com"
-        app = App.new(namespace, login, type, name)
-        unless app.reserved?
+        namespace = $namespace ? $namespace : "rhc" + Array.new(8, '').collect{chars[rand(chars.size)]}.join
+        login = $login ? $login : "rhc-test_#{namespace}@example.com"
+        password = $password ? $password : "supersecret"
+        app = App.new(namespace, login, type, name, password)
+        if $namespace || !app.reserved?
           app.persist
           return app
         end
@@ -75,12 +77,13 @@ module AppHelper::RHC
     end
 
     def update_uid(std_output)
-      match = std_output.map {|line| line.match(SSH_OUTPUT_PATTERN)}.compact[0]
-      @uid = match[1]
+      match = std_output.split("\n").map {|line| line.match(SSH_OUTPUT_PATTERN)}.compact[0]
+      @uid = match[1] if match
     end
 
     def persist
-      File.open(@file, "w") {|f| f.puts self.to_json}
+      json = self.as_json(:except => [:logger, :perf_logger])
+      File.open(@file, "w") {|f| f.puts json}
     end
 
     def reserved?
@@ -207,6 +210,3 @@ module AppHelper::RHC
     end
   end
 end
-
-# TODO - Move into a parent class
-#World(AppHelper)

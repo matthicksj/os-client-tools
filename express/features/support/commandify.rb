@@ -1,10 +1,8 @@
-require 'open4'
 require 'benchmark'
 require 'fileutils'
-require 'timeout'
 
-module AppHelper::RHC
-  module CallbackHelper
+module RHCHelper
+  module Commandify
     # Implements a method missing approach that will convert calls
     # like rhc_app_create into 'rhc app create' on the command line
     def method_missing(sym, *args, &block)
@@ -13,14 +11,14 @@ module AppHelper::RHC
         cmd = get_cmd(sym)
 
         # Get any blocks that should be run after processing
-        cmd_block = get_cmd_block(cmd, args[0])
+        cmd_callback = get_cmd_callback(cmd, args[0])
 
         # Add arguments to the command
         cmd << get_args(cmd, args[0])
 
         # Run the command, timing it
         time = Benchmark.realtime do
-          run(cmd, args[0], &cmd_block).should == 0
+          run(cmd, args[0], &cmd_callback).should == 0
         end
 
         # Log the benchmarking info
@@ -28,36 +26,6 @@ module AppHelper::RHC
       else
         super(sym, *args, &block)
       end
-    end
-
-    def run(cmd, arg=nil)
-      logger.info("Running: #{cmd}")
-
-      exit_code = -1
-      output = nil
-
-      # Don't let a command run more than 5 minutes
-      Timeout::timeout(500) do
-        pid, stdin, stdout, stderr = Open4::popen4 cmd
-        stdin.close
-
-        # Block until the command finishes
-        ignored, status = Process::waitpid2 pid
-        out = stdout.read.strip
-        err = stderr.read.strip
-        logger.debug("Standard Output:\n#{out}")
-        logger.debug("Standard Error:\n#{err}")
-
-        # Allow a caller to pass in a block to process the output
-        yield status.exitstatus, out, err, arg if block_given?
-        exit_code = status.exitstatus
-      end
-
-      if exit_code != 0
-        logger.error("(#{$$}): Execution failed #{cmd} with exit_code: #{exit_code.to_s}")
-      end
-
-      return exit_code
     end
 
     # Given a method name, convert to an equivalent
@@ -94,6 +62,7 @@ module AppHelper::RHC
           args << "-f #{@snapshot} "
         when /create/
           args << "-r #{@repo} "
+          args << "-t #{@type} "
         when /add-alias/
           raise "No alias set" unless @alias
           args << "--alias #{@alias} "
@@ -118,7 +87,7 @@ module AppHelper::RHC
       cmd_parts.shift
 
       # Look for a method match ending in _callback
-      1..cmd_parts.length do
+      cmd_parts.length.times do
         begin
           # Look for a callback match and return on any find
           return method((cmd_parts.join("_") + "_callback").to_sym)
@@ -134,8 +103,9 @@ module AppHelper::RHC
   #
   # Begin Post Processing Callbacks
   #
-  def app_create_callback(exitcode, stdout, stderr)
+  def app_create_callback(exitcode, stdout, stderr, arg)
     update_uid(stdout)
+    raise "UID not parsed from app create output" unless @uid
     persist
   end
 

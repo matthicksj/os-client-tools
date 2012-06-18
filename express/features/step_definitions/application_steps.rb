@@ -1,11 +1,12 @@
 require 'rubygems'
 require 'uri'
 require 'fileutils'
+require 'pp'
 
-include AppHelper
+include RHCHelper
 
 Given /^an existing (.+) application with an embedded (.*) cartridge$/ do |type, embed|
-  TestApp.find_on_fs.each do |app|
+  App.find_on_fs.each do |app|
     if app.type == type and app.embed.include?(embed)
       @app = app
       break
@@ -16,7 +17,7 @@ Given /^an existing (.+) application with an embedded (.*) cartridge$/ do |type,
 end
 
 Given /^an existing (.+) application( without an embedded cartridge)?$/ do |type, ignore|
-  TestApp.find_on_fs.each do |app|
+  App.find_on_fs.each do |app|
     if app.type == type and app.embed.empty?
       @app = app
       break
@@ -27,7 +28,7 @@ Given /^an existing (.+) application( without an embedded cartridge)?$/ do |type
 end
 
 Given /^a new client created (.+) application$/ do |type|
-  @app = TestApp.create_unique(type)
+  @app = App.create_unique(type)
   if rhc_create_domain(@app)
     rhc_create_app(@app)
   end
@@ -38,10 +39,11 @@ end
 When /^(\d+) (.+) applications are created$/ do |app_count, type|
   # Create our domain and apps
   @apps = app_count.to_i.times.collect do
-    app = TestApp.create_unique(type)
-    if rhc_create_domain(app)
-      rhc_create_app(app)
-    end
+    app = App.create_unique(type)
+
+    # Don't create the domain if a global namespace is set
+    app.rhc_domain_create unless $namespace
+    app.rhc_app_create
     app
   end
 end
