@@ -1,6 +1,6 @@
 module RHCHelper
   module Loggable
-    PASSWORD_REGEX = /(.* rhc .*) -p [^\s]* /
+    PASSWORD_REGEX = / -p [^\s]* /
 
     def logger
       Loggable.logger
@@ -19,7 +19,7 @@ module RHCHelper
       original_formatter = Logger::Formatter.new
       @logger.formatter = proc { |severity, datetime, progname, msg|
         # Filter out any passwords
-        filter_msg = msg.gsub(PASSWORD_REGEX, "#{$1} -p ***** ") 
+        filter_msg = msg.gsub(PASSWORD_REGEX, " -p ***** ") 
 
         # Format with the original formatter
         original_formatter.call(severity, datetime, progname, filter_msg)
