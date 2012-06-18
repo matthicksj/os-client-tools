@@ -3,6 +3,7 @@ require 'active_support'
 module RHCHelper
   module Persistable
     include ActiveSupport::JSON
+    include Loggable
 
     # a file to represent the local storage
     attr_accessor :file

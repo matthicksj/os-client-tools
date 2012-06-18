@@ -3,6 +3,8 @@ require 'timeout'
 
 module RHCHelper
   module Runnable
+    include Loggable
+
     def run(cmd, arg=nil)
       logger.info("Running: #{cmd}")
 

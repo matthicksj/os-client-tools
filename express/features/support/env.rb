@@ -1,4 +1,6 @@
 require 'tmpdir'
+require File.expand_path(File.dirname(__FILE__) + '/loggable')
+require File.expand_path(File.dirname(__FILE__) + '/httpify')
 require File.expand_path(File.dirname(__FILE__) + '/runnable')
 require File.expand_path(File.dirname(__FILE__) + '/commandify')
 require File.expand_path(File.dirname(__FILE__) + '/persistable')
@@ -15,12 +17,14 @@ AfterConfiguration do |config|
   FileUtils.mkdir_p $temp
 
   # Setup the logger
-  $logger = Logger.new(File.join($temp, "cucumber.log"))
-  $logger.level = Logger::DEBUG
+  logger = Logger.new(File.join($temp, "cucumber.log"))
+  logger.level = Logger::DEBUG
+  RHCHelper::Loggable.logger = logger
 
   # Setup performance monitor logger
-  $perf_logger = Logger.new(File.join($temp, "perfmon.log"))
-  $perf_logger.level = Logger::INFO
+  perf_logger = Logger.new(File.join($temp, "perfmon.log"))
+  perf_logger.level = Logger::INFO
+  RHCHelper::Loggable.perf_logger = perf_logger
 
   # Use a username and password from the environment if they exist
   $login = ENV['RHC_RHLOGIN']
