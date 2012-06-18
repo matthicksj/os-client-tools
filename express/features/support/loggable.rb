@@ -1,7 +1,5 @@
 module RHCHelper
   module Loggable
-    attr_accessor :logger, :perf_logger
-
     def logger
       Loggable.logger
     end
@@ -14,8 +12,16 @@ module RHCHelper
       @logger ||= Logger.STDOUT
     end
 
+    def self.logger=(logger)
+      @logger = logger
+    end
+
     def self.perf_logger
       @perf_logger ||= Logger.STDOUT
+    end
+
+    def self.perf_logger=(logger)
+      @perf_logger = logger
     end
   end
 end
