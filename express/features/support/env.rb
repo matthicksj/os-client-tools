@@ -1,6 +1,7 @@
 require 'tmpdir'
 require File.expand_path(File.dirname(__FILE__) + '/runnable')
 require File.expand_path(File.dirname(__FILE__) + '/commandify')
+require File.expand_path(File.dirname(__FILE__) + '/persistable')
 require File.expand_path(File.dirname(__FILE__) + '/rhc_helper')
 
 #

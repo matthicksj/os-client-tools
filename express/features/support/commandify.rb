@@ -100,11 +100,15 @@ module RHCHelper
     end
   end
 
+  # The regex to parse the ssh output from the create app results
+  SSH_OUTPUT_PATTERN = %r|ssh://([^@]+)@([^/]+)|
+
   #
   # Begin Post Processing Callbacks
   #
   def app_create_callback(exitcode, stdout, stderr, arg)
-    update_uid(stdout)
+    match = stdout.split.map {|line| line.match(SSH_OUTPUT_PATTERN)}.compact[0]
+    @uid = match[1] if match
     raise "UID not parsed from app create output" unless @uid
     persist
   end

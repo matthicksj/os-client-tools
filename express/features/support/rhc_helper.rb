@@ -6,19 +6,14 @@ module RHCHelper
   class App
     include ActiveSupport::JSON
     include Dnsruby
-    include RHCHelper::Commandify
-    include RHCHelper::Runnable
-
-    # The regex to parse the ssh output from the create app results
-    SSH_OUTPUT_PATTERN = %r|ssh://([^@]+)@([^/]+)|
+    include Commandify
+    include Runnable
+    include Persistable
 
     attr_accessor :logger, :perf_logger
 
     # attributes to represent the general information of the application
     attr_accessor :name, :namespace, :login, :password, :type, :hostname, :repo, :embed, :snapshot, :uid, :alias
-
-    # a file to represent the local storage
-    attr_accessor :file
 
     # attributes that contain statistics based on calls to connect
     attr_accessor :response_code, :response_time
@@ -56,34 +51,6 @@ module RHCHelper
           return app
         end
       end
-    end
-
-    def self.find_on_fs
-      Dir.glob("#{$temp}/*.json").collect {|f| App.from_file(f)}
-    end
-
-    def self.from_file(filename)
-      App.from_json(ActiveSupport::JSON.decode(File.open(filename, "r") {|f| f.readlines}[0]))
-    end
-
-    def self.from_json(json)
-      app = App.new(json['namespace'], json['login'], json['type'], json['name'])
-      app.embed = json['embed']
-      app.mysql_user = json['mysql_user']
-      app.mysql_password = json['mysql_password']
-      app.mysql_hostname = json['mysql_hostname']
-      app.uid = json['uid']
-      return app
-    end
-
-    def update_uid(std_output)
-      match = std_output.split("\n").map {|line| line.match(SSH_OUTPUT_PATTERN)}.compact[0]
-      @uid = match[1] if match
-    end
-
-    def persist
-      json = self.as_json(:except => [:logger, :perf_logger])
-      File.open(@file, "w") {|f| f.puts json}
     end
 
     def reserved?
