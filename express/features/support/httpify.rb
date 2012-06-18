@@ -1,4 +1,5 @@
 require 'uri'
+require 'net/https'
 
 module RHCHelper
   module Httpify
