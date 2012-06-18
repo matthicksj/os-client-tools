@@ -27,7 +27,7 @@ module RHCHelper
     end
     
     def http_head(url, host=nil, follow_redirects=true)
-      http = http_instance(url, timeout)
+      http = http_instance(url)
       http.start
       request = Net::HTTP::Head.new(uri.request_uri)
       request["Host"] = host if host
