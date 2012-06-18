@@ -24,15 +24,6 @@ Given /^an existing (.+) application( without an embedded cartridge)?$/ do |type
   @app.should_not be_nil
 end
 
-Given /^a new client created (.+) application$/ do |type|
-  @app = App.create_unique(type)
-  if rhc_create_domain(@app)
-    rhc_create_app(@app)
-  end
-  raise "Could not create domain" unless @app.create_domain_code == 0
-  raise "Could not create application" unless @app.create_app_code == 0
-end
-
 When /^(\d+) (.+) applications are created$/ do |app_count, type|
   # Create our domain and apps
   @apps = app_count.to_i.times.collect do
@@ -45,69 +36,12 @@ When /^(\d+) (.+) applications are created$/ do |app_count, type|
   end
 end
 
-When /^the submodule is added$/ do
-  Dir.chdir(@app.repo) do
-    # Add a submodule created in devenv and link the index file
-    run("git submodule add /root/submodule_test_repo")
-    run("REPLACE=`cat submodule_test_repo/index`; sed -i \"s/OpenShift/${REPLACE}/\" #{@app.get_index_file}")
-    run("git commit -a -m 'Test submodule change'")
-    run("git push >> " + @app.get_log("git_push") + " 2>&1")
-  end
-end
-
-When /^the embedded (.*) cartridge is added$/ do |type|
-  @app.rhc_app_cartridge_add(type)
-end
-
-When /^the embedded (.*) cartridge is removed$/ do |type|
-  @app.rhc_app_cartridge_remove(type)
-end
-
-When /^the application is changed$/ do
-  Dir.chdir(@app.repo) do
-    @update = "TEST"
-
-    # Make a change to the app index file
-    run("sed -i 's/Welcome/#{@update}/' #{@app.get_index_file}")
-    run("git commit -a -m 'Test change'")
-    run("git push >> " + @app.get_log("git_push") + " 2>&1")
-  end
-end
-
-When /^the application uses mysql$/ do
-  # the mysql file path is NOT relative to the app repo
-  # so, fetch the mysql file before the Dir.chdir
-  mysql_file = @app.get_mysql_file
-
-  Dir.chdir(@app.repo) do
-    # Copy the MySQL file over the index and replace the variables
-    FileUtils.cp mysql_file, @app.get_index_file
-
-    # Make a change to the app index file
-    run("sed -i 's/HOSTNAME/#{@app.mysql_hostname}/' #{@app.get_index_file}")
-    run("sed -i 's/USER/#{@app.mysql_user}/' #{@app.get_index_file}")
-    run("sed -i 's/PASSWORD/#{@app.mysql_password}/' #{@app.get_index_file}")
-    run("git commit -a -m 'Test change'")
-    run("git push >> " + @app.get_log("git_push_mysql") + " 2>&1")
-  end
-end
-
 When /^the application is stopped$/ do
   @app.rhc_app_stop
 end
 
 When /^the application is started$/ do
   @app.rhc_app_start
-end
-
-When /^the application is aliased$/ do
-  @app.alias = "www.example.com"
-  @app.rhc_app_add_alias
-end
-
-When /^the application is unaliased$/ do
-  @app.alias = "www.example.com"
-  @app.rhc_app_remove_alias
 end
 
 When /^the application is restarted$/ do
@@ -118,32 +52,19 @@ When /^the application is destroyed$/ do
   @app.rhc_app_destroy
 end
 
-When /^the application namespace is updated$/ do
-  # TODO - update the namespace
-  @app.rhc_domain_alter
-end
-
-When /^I snapshot the application$/ do
+When /^the application is snapshot$/ do
   @snapshot = File.join($temp, "snapshot.tar.gz")
   @app.snapshot = @snapshot
   @app.rhc_app_snapshot_save
 end
 
-When /^I tidy the application$/ do
+When /^the application is tidied$/ do
   @app.rhc_app_tidy
-end
-
-When /^I restore the application$/ do
-  @app.rhc_app_snapshot_restore
 end
 
 Then /^the snapshot should be found$/ do
   File.exist?(@snapshot).should be_true
   (File.size(@snapshot) > 0).should be_true
-end
-
-Then /^the application should respond to the alias$/ do
-  @app.is_accessible?(false, 120, "#{@app.alias}").should be_true
 end
 
 Then /^the applications should be accessible?$/ do
@@ -153,50 +74,6 @@ Then /^the applications should be accessible?$/ do
   end
 end
 
-Then /^the applications should be temporarily unavailable$/ do
-  @apps.each do |app|
-    app.is_temporarily_unavailable?.should be_true
-  end
-end
-
-Then /^the mysql response is successful$/ do
-  60.times do |i|
-    body = @app.connect
-    break if body and body =~ /Success/
-    sleep 1
-  end
-
-  # Check for Success
-  body = @app.connect
-  body.should match(/Success/)
-end
-
-Then /^it should be updated successfully$/ do
-  60.times do |i|
-    body = @app.connect
-    break if body and body =~ /#{@update}/
-    sleep 1
-  end
-
-  # Make sure the update is present
-  body = @app.connect
-  body.should_not be_nil
-  body.should match(/#{@update}/)
-end
-
-Then /^the submodule should be deployed successfully$/ do
-  60.times do |i|
-    body = @app.connect
-    break if body and body =~ /Submodule/
-    sleep 1
-  end
-
-  # Make sure the update is present
-  body = @app.connect
-  body.should_not be_nil
-  body.should match(/Submodule/)
-end
-
 Then /^the application should be accessible$/ do
   @app.is_accessible?.should be_true
   @app.is_accessible?(true).should be_true
@@ -204,4 +81,7 @@ end
 
 Then /^the application should not be accessible$/ do
   @app.is_inaccessible?.should be_true
+end
+
+Then /^it should succeed$/ do
 end
