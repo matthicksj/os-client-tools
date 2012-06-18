@@ -1,5 +1,6 @@
 require 'benchmark'
 require 'fileutils'
+require 'pp'
 
 module RHCHelper
   module Commandify
@@ -97,6 +98,8 @@ module RHCHelper
           cmd_parts.pop
         end
       end
+
+      return nil
     end
   end
 
